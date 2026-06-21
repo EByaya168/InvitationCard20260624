@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Valentine's Quest ❤️</title>
     <style>
         * {
@@ -16,14 +16,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background: linear-gradient(135deg, #ffe5ec, #ffc2d1);
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            overflow: hidden;
             text-align: center;
-            position: fixed;
             width: 100%;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow-y: auto; 
+            padding: calc(20px + env(safe-area-inset-top)) env(safe-area-inset-right) calc(20px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
         }
 
         .container {
@@ -37,6 +36,7 @@
             max-width: 440px;
             z-index: 10;
             transition: all 0.3s ease;
+            margin: auto; 
         }
 
         /* 關卡進度條 */
@@ -131,6 +131,7 @@
             margin: 0 auto;
             justify-content: center;
             align-items: center;
+            overflow: visible; 
         }
 
         .taiwan-map {
@@ -153,19 +154,89 @@
             filter: brightness(0.85);
         }
 
-        /* 地圖縣市文字樣式 */
         .map-label {
             font-size: 12px;
             font-weight: bold;
             fill: #333333;
             text-anchor: middle;
             dominant-baseline: middle;
-            pointer-events: none; /* 防止文字阻擋滑鼠點擊事件 */
+            pointer-events: none; 
             user-select: none;
         }
         
         .white-label {
             fill: #ffffff;
+        }
+
+        /* 🎮 第四關專屬：接花小遊戲容器樣式 */
+        #game-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: linear-gradient(to bottom, #fff5f5, #ffe3e3);
+            border-radius: 16px;
+            border: 2px dashed #ff758f;
+            overflow: hidden;
+            margin-bottom: 10px;
+            touch-action: none; /* 阻止手機拖曳時產生網頁原生滾動 */
+        }
+
+        /* 遊戲上方資訊列 */
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #d90429;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            z-index: 15;
+        }
+
+        /* 籃子 */
+        #basket {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            width: 65px;
+            height: 45px;
+            font-size: 40px;
+            line-height: 45px;
+            text-align: center;
+            transform: translateX(-50%);
+            cursor: grab;
+            z-index: 12;
+            user-select: none;
+        }
+
+        /* 掉落的花朵 */
+        .falling-flower {
+            position: absolute;
+            font-size: 26px;
+            user-select: none;
+            z-index: 11;
+        }
+
+        /* 倒數計時大字特效 */
+        #countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            font-weight: bold;
+            color: #ff4d6d;
+            z-index: 20;
+            display: none;
+            border-radius: 16px;
         }
 
         /* 🌸 自訂網頁精美彈窗樣式 */
@@ -263,6 +334,7 @@
             .gif-container img { max-width: 100px; max-height: 100px; }
             h1 { font-size: 1.1rem; margin-bottom: 10px; }
             #map-container { height: 280px; }
+            #game-container { height: 240px; }
         }
     </style>
 </head>
@@ -346,6 +418,15 @@
                 </g>
             </svg>
         </div>
+
+        <div id="game-container">
+            <div class="game-stats">
+                <div id="game-timer">剩餘時間: 10s</div>
+                <div id="game-score">接到花朵: 0</div>
+            </div>
+            <div id="countdown-overlay">3</div>
+            <div id="basket">🧺</div>
+        </div>
         
         <div class="btn-group" id="btn-container">
             <button id="yes-btn" onclick="handleYes()">Yes</button>
@@ -356,7 +437,7 @@
     <div class="modal-overlay" id="custom-modal">
         <div class="modal-box">
             <div class="modal-text" id="modal-content">提示文字</div>
-            <button class="modal-btn" onclick="closeCustomModal()">好哦</button>
+            <button class="modal-btn" id="modal-action-btn" onclick="closeCustomModal()">好哦</button>
         </div>
     </div>
 
@@ -367,18 +448,34 @@
         const gif = document.getElementById('display-gif');
         const question = document.getElementById('question');
         const steps = document.querySelectorAll('.step');
+        
+        // 模組容器
         const mapContainer = document.getElementById('map-container');
+        const gameContainer = document.getElementById('game-container');
         const btnContainer = document.getElementById('btn-container');
         
-        // 彈窗相關元素
+        // 彈窗與小遊戲元素
         const customModal = document.getElementById('custom-modal');
         const modalContent = document.getElementById('modal-content');
+        const modalActionBtn = document.getElementById('modal-action-btn');
+        const basket = document.getElementById('basket');
+        const gameTimerText = document.getElementById('game-timer');
+        const gameScoreText = document.getElementById('game-score');
+        const countdownOverlay = document.getElementById('countdown-overlay');
 
-        let currentStage = 0; // 目前第幾關 (0-4)
-        let noClickCount = 0; // 當前關卡點擊 No 的次數
-        let isHsinchuClicked = false; // 是否已點對新竹
+        let currentStage = 0; 
+        let noClickCount = 0; 
+        let isHsinchuClicked = false; 
+        
+        // 遊戲狀態變數
+        let gameScore = 0;
+        let gameTimeLeft = 10;
+        let gameInterval = null;
+        let spawnInterval = null;
+        let flowerElements = [];
+        let isGameStageIntro = false;
+        let isGameStageEnd = false;
 
-        // 🌟 5 個畫面的關卡資料
         const stages = [
             {
                 question: "親愛的小寶貝，你知道6/24號是什麼重要的日子嗎？ 🤔",
@@ -399,9 +496,9 @@
                 normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3g5Mms0ZXhieGl3YXhicHFyOHV2eGJ0M3p4Mm9ma3p3ZDJ1ZWZ3dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/9f2hmeIUtZ9kvJJ1v7/giphy.gif"
             },
             {
-                question: "第四關：吃飽後，聽說有個地方夜景很美，一起去散散步？ 🌌",
-                yesText: "出發！",
-                noText: "腳會酸，拒絕",
+                question: "第四關：去新竹前放鬆一下！聽說這裡有場浪漫的花瓣雨...🌸<br>動動手指操控籃子，接住落下來的花朵吧！",
+                yesText: "",
+                noText: "",
                 normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExG3E4bTNsODVpMGpib3loNDJ5ZnM1cTJ1MWo3eW1xZGdtMmd4cnV3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/K6wiNs597WhA4/giphy.gif"
             },
             {
@@ -412,18 +509,13 @@
             }
         ];
 
-        // 專屬的 noTexts 流程
         const firstStageNoTexts = ["寶貝再想想 💔", "是不是快想起來了！😭", "沒錯！大聲說出來！🙏"];
         const secondStageNoTexts = ["是日式料理嗎？", "答錯了~ 寶貝最近應該吃很多日式料理了吧", "那是牛排嗎？", "也不對喔~牛排改天我們再去吃", "那究竟是什麼呢！？\n登登登登登登(音效)"];
-
-        // 其他關卡（第4、5關）通用的惡搞求饒文字
         const generalNoTexts = ["Are you sure? 🥺", "再考慮一下嘛... 💔", "不准按這裡！😭", "真的不要？🙏", "你抓不到我～😂"];
 
-        // 初始化/刷新關卡畫面
         function initStage() {
             noClickCount = 0;
             
-            // 恢復按鈕狀態與正常排版
             noBtn.style.position = 'static';
             noBtn.style.transform = 'scale(1)';
             noBtn.style.display = 'inline-block'; 
@@ -432,13 +524,23 @@
             yesBtn.style.transform = 'scale(1)';
             yesBtn.classList.remove('giant-yes');
 
-            // 核心切換邏輯
+            // 關卡切換邏輯
             if (currentStage === 2) {
                 btnContainer.style.display = 'none';
                 mapContainer.style.display = 'flex';
+                gameContainer.style.display = 'none';
+            } else if (currentStage === 3) {
+                // 進入第四關：地圖和按鈕群隱藏，開啟小遊戲版面，並自動跳出玩法說明
+                btnContainer.style.display = 'none';
+                mapContainer.style.display = 'none';
+                gameContainer.style.display = 'block';
+                
+                isGameStageIntro = true;
+                showCustomModal("✨ 寶貝挑戰來啦！ ✨<br><br>天空等一下會掉落好多漂亮花瓣，在 10 秒內用手指【左右滑動拖曳】下方的籃子接住它們吧！準備好了嗎？");
             } else {
                 btnContainer.style.display = 'flex';
                 mapContainer.style.display = 'none';
+                gameContainer.style.display = 'none';
 
                 if (currentStage === 0 || currentStage === 1) {
                     yesBtn.style.display = 'none';
@@ -448,40 +550,192 @@
                 }
             }
 
-            // 載入當前關卡文本與圖片
             question.innerHTML = stages[currentStage].question;
             gif.src = stages[currentStage].normalGif;
 
-            // 更新頂部小圓點狀態
             steps.forEach((step, idx) => {
                 if (idx <= currentStage) step.classList.add('active');
                 else step.classList.remove('active');
             });
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 🌸 顯示網頁特製彈窗
         function showCustomModal(text) {
             modalContent.innerHTML = text;
             customModal.classList.add('show');
         }
 
-        // 🌸 關閉網頁特製彈窗
         function closeCustomModal() {
             customModal.classList.remove('show');
-            // 如果剛才點對了新竹，在關閉彈窗後才順暢切換到下一關
+            
             if (isHsinchuClicked) {
-                isHsinchuClicked = false; // 重設狀態
+                isHsinchuClicked = false; 
                 handleYes();
+                return;
+            }
+            
+            // 第四關前導說明按下確認後，開始3秒倒數
+            if (isGameStageIntro) {
+                isGameStageIntro = false;
+                startCountdown();
+                return;
+            }
+
+            // 第四關遊戲結束按下確認後，推進到最終關
+            if (isGameStageEnd) {
+                isGameStageEnd = false;
+                handleYes();
+                return;
             }
         }
 
-        // 🗺️ 點擊正確答案「新竹」的專屬觸發
         function triggerHsinchu() {
             isHsinchuClicked = true;
-            showCustomModal("哇！被妳猜到了！ Wald !! 🎉<br>沒錯，我們就是要去新竹度假慶生囉！❤️");
+            showCustomModal("哇！被妳猜到了！🎉<br>沒錯，我們就是要去新竹度假慶生囉！❤️");
         }
 
-        // 處理點擊「不同意」的防禦機制動畫
+        /* 🎮 第四關遊戲控制核心邏輯 */
+        function startCountdown() {
+            countdownOverlay.style.display = 'flex';
+            let count = 3;
+            countdownOverlay.innerText = count;
+            
+            let countTimer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownOverlay.innerText = count;
+                } else if (count === 0) {
+                    countdownOverlay.innerText = "Go! 🌸";
+                } else {
+                    clearInterval(countTimer);
+                    countdownOverlay.style.display = 'none';
+                    startGameLoop(); // 倒數完畢，啟動遊戲
+                }
+            }, 1000);
+        }
+
+        function startGameLoop() {
+            gameScore = 0;
+            gameTimeLeft = 10;
+            gameScoreText.innerText = `接到花朵: ${gameScore}`;
+            gameTimerText.innerText = `剩餘時間: ${gameTimeLeft}s`;
+            
+            // 籃子初始化位置置中
+            basket.style.left = '50%';
+            setupBasketControl();
+
+            // 10秒倒數計時器
+            gameInterval = setInterval(() => {
+                gameTimeLeft--;
+                gameTimerText.innerText = `剩餘時間: ${gameTimeLeft}s`;
+                
+                if (gameTimeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // 每 400 毫秒生成一朵隨機落花
+            spawnInterval = setInterval(spawnFlower, 400);
+
+            // 動態更新花朵物理掉落與碰撞檢測
+            requestAnimationFrame(updateFlowers);
+        }
+
+        // 手機與網頁共用：控制籃子跟隨手指/滑鼠移動
+        function setupBasketControl() {
+            const moveHandler = (e) => {
+                const rect = gameContainer.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let relativeX = clientX - rect.left;
+                
+                // 邊界防禦，不讓籃子超出邊界
+                if (relativeX < 32) relativeX = 32;
+                if (relativeX > rect.width - 32) relativeX = rect.width - 32;
+                
+                basket.style.left = `${relativeX}px`;
+            };
+
+            // 綁定觸控與滑鼠事件
+            gameContainer.addEventListener('mousemove', moveHandler);
+            gameContainer.addEventListener('touchmove', moveHandler, { passive: true });
+        }
+
+        function spawnFlower() {
+            const flowers = ['🌸', '🌹', '🌷', '✨', '🌺'];
+            const flower = document.createElement('div');
+            flower.classList.add('falling-flower');
+            flower.innerText = flowers[Math.floor(Math.random() * flowers.length)];
+            
+            const containerWidth = gameContainer.offsetWidth;
+            const randomX = Math.random() * (containerWidth - 30);
+            
+            flower.style.left = `${randomX}px`;
+            flower.style.top = `-30px`;
+            
+            gameContainer.appendChild(flower);
+            
+            // 紀錄花朵物件狀態 (速度微幅隨機更自然)
+            flowerElements.push({
+                element: flower,
+                y: -30,
+                speed: Math.random() * 2 + 3 
+            });
+        }
+
+        function updateFlowers() {
+            if (gameTimeLeft <= 0) return; // 遊戲結束停止更新
+
+            const containerHeight = gameContainer.offsetHeight;
+            const basketRect = basket.getBoundingClientRect();
+            const containerRect = gameContainer.getBoundingClientRect();
+
+            // 計算籃子相對於容器的頂部與左右邊界距離
+            const basketTop = basketRect.top - containerRect.top;
+            const basketLeft = basketRect.left - containerRect.left;
+            const basketRight = basketLeft + basketRect.width;
+
+            for (let i = flowerElements.length - 1; i >= 0; i--) {
+                let f = flowerElements[i];
+                f.y += f.speed;
+                f.element.style.top = `${f.y}px`;
+
+                // 碰撞檢測：當花朵掉落到籃子高度時
+                if (f.y >= basketTop - 15 && f.y <= basketTop + 25) {
+                    const flowerLeft = parseFloat(f.element.style.left);
+                    // 檢查花朵水平位置是否在籃子範圍內
+                    if (flowerLeft + 15 >= basketLeft && flowerLeft <= basketRight - 5) {
+                        gameScore++;
+                        gameScoreText.innerText = `接到花朵: ${gameScore}`;
+                        f.element.remove();
+                        flowerElements.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                // 超出邊界移除
+                if (f.y > containerHeight) {
+                    f.element.remove();
+                    flowerElements.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(updateFlowers);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(spawnInterval);
+            
+            // 清空畫面上殘留的所有花朵
+            flowerElements.forEach(f => f.element.remove());
+            flowerElements = [];
+
+            isGameStageEnd = true;
+            showCustomModal(`🎉 挑戰時間到！ 🎉<br><br>小寶貝太棒了！一共接到了 <span style="color:#d90429; font-size:1.3rem; font-weight:bold;">${gameScore}</span> 朵浪漫花瓣！<br>看來妳的手速與默契都滿分喔！🥰`);
+        }
+
+        /* 處理點擊「不同意」的防禦機制動畫 */
         function handleNo(event) {
             if (event) event.preventDefault();
             
@@ -514,23 +768,19 @@
 
             noClickCount++;
 
-            // 1. 改變不同意按鈕文字
             const textIdx = Math.min(noClickCount - 1, generalNoTexts.length - 1);
             noBtn.innerText = generalNoTexts[textIdx];
 
-            // 2. 讓 Yes 變大，No 變小
             const yesScale = 1 + (noClickCount * 0.3);
             yesBtn.style.transform = `scale(${yesScale})`;
 
             const noScale = Math.max(0.5, 1 - (noClickCount * 0.1));
             noBtn.style.transform = `scale(${noScale})`;
 
-            // 3. 超過 3 次點擊，No 開始全螢幕大漂移
             if (noClickCount >= 3 && noClickCount < 8) {
                 teleportNoButton();
             }
 
-            // 4. 超過 8 次點擊，啟動 Yes 終極大魔王防線
             if (noClickCount >= 8) {
                 noBtn.style.position = 'static';
                 yesBtn.innerText = "就說了只能選 " + stages[currentStage].yesText + "! ❤️";
@@ -563,6 +813,7 @@
         function celebrate() {
             document.getElementById('progress-container').style.display = 'none';
             if(mapContainer) mapContainer.style.display = 'none';
+            if(gameContainer) gameContainer.style.display = 'none';
             btnContainer.style.display = 'none';
 
             gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbW9pM3R5Y2Nndm9xMTZ2bW93cXc5amY1YzhwM200b3VnZnd0N3FjNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/26FLdmIp6wJr91JAI/giphy.gif";
