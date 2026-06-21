@@ -76,7 +76,7 @@
 
         h1 {
             color: #d90429;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin-bottom: 30px;
             line-height: 1.4;
             min-height: 70px;
@@ -107,8 +107,8 @@
         #yes-btn {
             background-color: #38b000;
             color: white;
-            padding: 12px 30px;
-            font-size: 1.2rem;
+            padding: 12px 25px;
+            font-size: 1.1rem;
             z-index: 5;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.2s, height 0.2s;
         }
@@ -131,7 +131,7 @@
             height: 100vh !important;
             z-index: 999 !important;
             border-radius: 0 !important;
-            font-size: 3rem !important;
+            font-size: 2.5rem !important;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -192,45 +192,57 @@
         let currentStage = 0; // 目前第幾關 (0-4)
         let noClickCount = 0; // 當前關卡點擊 No 的次數
 
-        // 🌟 核心設計：5 個畫面的關卡資料（可自行客製化文字與 GIF）
+        // 🌟 核心設計：包覆了各自按鈕文字的 5 關資料（可自由調整你想放的台詞）
         const stages = [
             {
-                question: "第一關：今年情人節，你有打算跟帥哥一起過嗎？第一關：今年情人節，你有打算跟帥哥一起過嗎？第一關：今年情人節，你有打算跟帥哥一起過嗎？第一關：今年情人節，你有打算跟帥哥一起過嗎？第一關：今年情人節，你有打算跟帥哥一起過嗎？第一關：今年情人節，你有打算跟帥哥一起過嗎？ 😏",
+                question: "第一關：今年情人節，你有打算跟帥哥一起過嗎？ 😏",
+                yesText: "有啊哈哈",
+                noText: "沒有欸",
                 normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Bnd21kZ3R1YXJ1M3R0Nms3bXg2dG94ZXFmZXN4bmp3ZndpZ3FubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/c4v48NmrF78R2/giphy.gif"
             },
             {
                 question: "第二關：那...這個帥哥的名單裡，有包含我嗎？ 👉👈",
+                yesText: "勉强算你一票",
+                noText: "完全沒有",
                 normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3JpMnRhZ29vNXAwZDJmaDJ6eHBoZm93N3o3cTlyMDhhYzdtMW0wbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/Y4z9olDcYtT20/giphy.gif"
             },
             {
                 question: "第三關：既然都有我了，當天賞臉跟我去吃頓大餐吧？ 🍕",
+                yesText: "好哇！我要吃大餐",
+                noText: "才不要勒",
                 normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3g5Mms0ZXhieGl3YXhicHFyOHV2eGJ0M3p4Mm9ma3p3ZDJ1ZWZ3dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/9f2hmeIUtZ9kvJJ1v7/giphy.gif"
             },
             {
                 question: "第四關：吃飽後，聽說有個地方夜景很美，一起去散散步？ 🌌",
-                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ3E4bTNsODVpMGpib3loNDJ5ZnM1cTJ1MWo3eW1xZGdtMmd4cnV3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/K6wiNs597WhA4/giphy.gif"
+                yesText: "出發！",
+                noText: "腳會酸，拒絕",
+                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExR3E4bTNsODVpMGpib3loNDJ5ZnM1cTJ1MWo3eW1xZGdtMmd4cnV3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/K6wiNs597WhA4/giphy.gif"
             },
             {
-                question: "最後一關：最後確認！所以你願意當我的情人節汪汪/北鼻了嗎？ ❤️",
+                question: "最後一關：最後確認！所以你願意當我的情人節北鼻了嗎？ ❤️",
+                yesText: "好啦，答應你！🥰",
+                noText: "下輩子吧",
                 normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmszbWw3MDZsMWszazh6cjBhZmlmdmhrZTFjY2g0MTd4ZHp0dzN1eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/v9G3NGByE9x16/giphy.gif"
             }
         ];
 
-        // 當按「No」時，會依序出現的求饒文字
+        // 當按拒絕按鈕時，通用的惡搞求饒文字
         const noTexts = ["Are you sure? 🥺", "再考慮一下嘛... 💔", "不准按這裡！😭", "真的不要？🙏", "你抓不到我～😂"];
 
-        // 初始化第一個畫面
+        // 初始化/刷新關卡畫面
         function initStage() {
             noClickCount = 0;
             
-            // 恢復按鈕狀態與樣式
+            // 恢復按鈕狀態與正常排版
             noBtn.style.position = 'static';
             noBtn.style.transform = 'scale(1)';
-            noBtn.innerText = "No";
             
             yesBtn.style.transform = 'scale(1)';
-            yesBtn.innerText = "Yes";
             yesBtn.classList.remove('giant-yes');
+
+            // 🌟 重點：動態帶入該關卡專屬的按鈕文字
+            yesBtn.innerText = stages[currentStage].yesText;
+            noBtn.innerText = stages[currentStage].noText;
 
             // 載入當前關卡文本與圖片
             question.innerHTML = stages[currentStage].question;
@@ -249,7 +261,7 @@
             
             noClickCount++;
 
-            // 1. 改變 No 按鈕文字
+            // 1. 改變不同意按鈕文字（進入惡搞求饒模式）
             const textIdx = Math.min(noClickCount - 1, noTexts.length - 1);
             noBtn.innerText = noTexts[textIdx];
 
@@ -265,10 +277,10 @@
                 teleportNoButton();
             }
 
-            // 4. 超過 8 次點擊，啟動 Yes 終極大魔王防線（逼對方一定要點 Yes）
+            // 4. 超過 8 次點擊，啟動 Yes 終極大魔王防線
             if (noClickCount >= 8) {
                 noBtn.style.position = 'static';
-                yesBtn.innerText = "就說了只能選 YES! ❤️";
+                yesBtn.innerText = "就說了只能選 " + stages[currentStage].yesText + "! ❤️";
                 yesBtn.classList.add('giant-yes');
             }
         }
@@ -280,7 +292,7 @@
             const maxY = window.innerHeight - noBtn.offsetHeight - padding;
 
             const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
-            const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+            const randomY = Math.max(padding, Math.floor(Math.random() * maxY)); // 修正原本 Math.withRandom 的錯字
 
             noBtn.style.position = 'fixed';
             noBtn.style.left = randomX + 'px';
@@ -292,7 +304,7 @@
             currentStage++;
 
             if (currentStage < stages.length) {
-                // 如果還沒破關，刷新文字並重製按鈕
+                // 如果還沒破關，重置按鈕並載入下一關各自的文字
                 initStage();
             } else {
                 // 通過 5 關，進入最終大結局！
