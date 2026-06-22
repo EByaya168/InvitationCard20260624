@@ -1,843 +1,1269 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>Valentine's Quest ❤️</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #ffe5ec, #ffc2d1);
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            text-align: center;
-            width: 100%;
-            overflow-y: auto; 
-            padding: calc(20px + env(safe-area-inset-top)) env(safe-area-inset-right) calc(20px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
-        }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #ffe5ec, #ffc2d1);
+        font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+        text-align: center;
+        width: 100%;
+        overflow-y: auto;
+        padding: calc(20px + env(safe-area-inset-top))
+          env(safe-area-inset-right) calc(20px + env(safe-area-inset-bottom))
+          env(safe-area-inset-left);
+      }
 
+      .container {
+        background: rgba(255, 255, 255, 0.88);
+        padding: 35px 25px;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        width: 95%;
+        max-width: 440px;
+        z-index: 10;
+        transition: all 0.3s ease;
+        margin: auto;
+      }
+
+      /* 關卡進度條 */
+      .progress-bar {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .step {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        transition:
+          background-color 0.3s ease,
+          transform 0.3s ease;
+      }
+
+      .step.active {
+        background-color: #ff4d6d;
+        transform: scale(1.2);
+      }
+
+      .gif-container {
+        height: 140px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .gif-container img {
+        max-width: 140px;
+        max-height: 140px;
+        object-fit: contain;
+      }
+
+      h1 {
+        color: #d90429;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        line-height: 1.4;
+        min-height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-group {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+        min-height: 60px;
+        width: 100%;
+      }
+
+      button {
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        touch-action: manipulation;
+      }
+
+      #yes-btn {
+        background-color: #38b000;
+        color: white;
+        padding: 12px 25px;
+        font-size: 1.1rem;
+        z-index: 5;
+        transition:
+          transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+          width 0.2s,
+          height 0.2s;
+      }
+
+      #no-btn {
+        background-color: #d90429;
+        color: white;
+        padding: 12px 25px;
+        font-size: 1.1rem;
+        z-index: 6;
+        transition:
+          transform 0.15s ease-out,
+          opacity 0.2s;
+        white-space: nowrap;
+      }
+
+      /* 🗺️ 第三關專屬：精確比例台灣地圖樣式（已調校置上與防切邊） */
+      #map-container {
+        display: none;
+        width: 100%;
+        height: 380px;
+        margin: -15px auto 0 auto; /* 整體稍微再往上拉，貼近文字 */
+        justify-content: center;
+        align-items: center;
+        overflow: visible;
+      }
+
+      .taiwan-map {
+        width: 100%;
+        height: 100%;
+        overflow: visible; /* 確保邊界完全不切到尾巴 */
+      }
+
+      .county-group {
+        cursor: pointer;
+      }
+
+      .county {
+        transition:
+          fill 0.2s ease,
+          filter 0.2s ease;
+        stroke: #ffffff;
+        stroke-width: 1.5;
+        stroke-linejoin: round;
+      }
+
+      .county-group:hover .county,
+      .county-group:active .county {
+        filter: brightness(0.85);
+      }
+
+      .map-label {
+        font-size: 12px;
+        font-weight: bold;
+        fill: #333333;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .white-label {
+        fill: #ffffff;
+      }
+
+      /* 🎮 第四關專屬：接花小遊戲容器樣式 */
+      #game-container {
+        display: none;
+        position: relative;
+        width: 100%;
+        height: 320px;
+        background: linear-gradient(to bottom, #fff5f5, #ffe3e3);
+        border-radius: 16px;
+        border: 2px dashed #ff758f;
+        overflow: hidden;
+        margin-bottom: 10px;
+        touch-action: none;
+      }
+
+      /* 遊戲上方資訊列 */
+      .game-stats {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        font-size: 0.95rem;
+        font-weight: bold;
+        color: #d90429;
+        position: absolute;
+        width: 100%;
+        top: 0;
+        z-index: 15;
+      }
+
+      /* 籃子 */
+      #basket {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        width: 65px;
+        height: 45px;
+        font-size: 40px;
+        line-height: 45px;
+        text-align: center;
+        transform: translateX(-50%);
+        cursor: grab;
+        z-index: 12;
+        user-select: none;
+      }
+
+      /* 掉落的花朵 */
+      .falling-flower {
+        position: absolute;
+        font-size: 26px;
+        user-select: none;
+        z-index: 11;
+      }
+
+      /* 倒數計時大字特效 */
+      #countdown-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 4rem;
+        font-weight: bold;
+        color: #ff4d6d;
+        z-index: 20;
+        display: none;
+        border-radius: 16px;
+      }
+
+      /* 🌸 自訂網頁精美彈窗樣式 */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .modal-box {
+        background: white;
+        width: 85%;
+        max-width: 320px;
+        padding: 25px 20px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        transform: scale(0.8);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        text-align: center;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+        opacity: 1;
+      }
+
+      .modal-overlay.show .modal-box {
+        transform: scale(1);
+      }
+
+      .modal-text {
+        color: #4a4a4a;
+        font-size: 1.05rem;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        font-weight: 500;
+      }
+
+      .modal-btn {
+        background: linear-gradient(135deg, #ff758f, #ff4d6d);
+        color: white;
+        padding: 10px 30px;
+        font-size: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(255, 77, 109, 0.3);
+        transition: transform 0.1s ease;
+      }
+
+      .modal-btn:active {
+        transform: scale(0.95);
+      }
+
+      .giant-yes {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999 !important;
+        border-radius: 0 !important;
+        font-size: 2.5rem !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        animation: confettiFall 4s linear infinite;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      :root {
+        --env-bg: #c9b097; /* 信封卡其色 */
+        --env-flap-bg: #bfa58a; /* 翻蓋顏色（稍微深一點製造陰影感） */
+        --wax-color: #8a151b; /* 經典復古酒紅封蠟 */
+      }
+
+      /* 全螢幕信封容器 */
+      .envelope-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #f4edd9; /* 復古風背景底色 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition:
+          opacity 0.8s ease-in-out,
+          transform 0.8s ease-in-out;
+      }
+
+      /* 信封本體 */
+      .envelope {
+        position: relative;
+        width: 450px;
+        height: 300px;
+        background-color: var(--env-bg);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        perspective: 800px; /* 啟用 3D 空間 */
+      }
+
+      /* 上翻蓋 (三角形) */
+      .flap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        border-left: 225px solid transparent;
+        border-right: 225px solid transparent;
+        border-top: 150px solid var(--env-flap-bg);
+        transform-origin: top;
+        transition: transform 0.6s ease-in-out;
+        z-index: 3;
+      }
+
+      /* 信封口袋袋身 (由左右與下方陰影堆疊出西式信封感) */
+      .pocket {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--env-bg);
+        z-index: 2;
+        /* 用線性漸層模擬西式信封的交疊線條 */
+        background:
+          linear-gradient(30deg, #c1a88f 49%, transparent 50%),
+          linear-gradient(-30deg, #c1a88f 49%, transparent 50%),
+          linear-gradient(to top, #b59c83, #b59c83);
+        background-size:
+          50% 100%,
+          50% 100%,
+          100% 100%;
+        background-position: left, right, center;
+        background-repeat: no-repeat;
+      }
+
+      /* 封蠟 */
+      .wax-seal {
+        position: absolute;
+        top: 130px;
+        left: 200px;
+        width: 50px;
+        height: 50px;
+        background-color: var(--wax-color);
+        border-radius: 50%;
+        z-index: 4;
+        cursor: pointer;
+        box-shadow:
+          0 4px 8px rgba(0, 0, 0, 0.3),
+          inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: transform 0.3s ease;
+      }
+
+      .wax-seal:hover {
+        transform: scale(1.1);
+      }
+
+      .wax-text {
+        color: #dfb76c;
+        font-family: "Georgia", serif;
+        font-weight: bold;
+        font-size: 16px;
+        user-select: none;
+      }
+
+      /* --- 動態觸發狀態 --- */
+
+      /* 1. 點擊後，封蠟淡出並縮小 */
+      .envelope.open .wax-seal {
+        transform: scale(0);
+        opacity: 0;
+        transition:
+          transform 0.4s ease,
+          opacity 0.4s ease;
+        pointer-events: none;
+      }
+
+      /* 2. 封蠟消失後，翻蓋往上掀開 (3D 翻轉 180 度) */
+      .envelope.open .flap {
+        transform: rotateX(180deg);
+        z-index: 1; /* 翻開後圖層退到信封後方 */
+        transition-delay: 0.2s; /* 稍微等封蠟動畫開始後再翻蓋 */
+      }
+
+      /* 3. 整封信件淡出退場 */
+      .envelope-wrapper.fade-out {
+        opacity: 0;
+        transform: translateY(50px); /* 帶有一點往下沉沉的優雅退場感 */
+        pointer-events: none;
+      }
+
+      @keyframes confettiFall {
+        0% {
+          transform: translateY(-10vh) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(110vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+
+      @media (max-height: 600px) {
         .container {
-            background: rgba(255, 255, 255, 0.88);
-            padding: 35px 25px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            width: 95%;
-            max-width: 440px;
-            z-index: 10;
-            transition: all 0.3s ease;
-            margin: auto; 
+          padding: 20px;
         }
-
-        /* 關卡進度條 */
-        .progress-bar {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .step {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #e0e0e0;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-        }
-
-        .step.active {
-            background-color: #ff4d6d;
-            transform: scale(1.2);
-        }
-
         .gif-container {
-            height: 140px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 15px;
+          height: 100px;
         }
-
         .gif-container img {
-            max-width: 140px;
-            max-height: 140px;
-            object-fit: contain;
+          max-width: 100px;
+          max-height: 100px;
         }
-
         h1 {
-            color: #d90429;
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            line-height: 1.4;
-            min-height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+          font-size: 1.1rem;
+          margin-bottom: 10px;
         }
-
-        .btn-group {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-            min-height: 60px;
-            width: 100%;
-        }
-
-        button {
-            font-weight: bold;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            touch-action: manipulation;
-        }
-
-        #yes-btn {
-            background-color: #38b000;
-            color: white;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            z-index: 5;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.2s, height 0.2s;
-        }
-
-        #no-btn {
-            background-color: #d90429;
-            color: white;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            z-index: 6;
-            transition: transform 0.15s ease-out, opacity 0.2s;
-            white-space: nowrap;
-        }
-
-        /* 🗺️ 第三關專屬：精確比例台灣地圖樣式 */
         #map-container {
-            display: none;
-            width: 100%;
-            height: 380px;
-            margin: 0 auto;
-            justify-content: center;
-            align-items: center;
-            overflow: visible; 
+          height: 280px;
+          margin-top: -5px;
         }
-
-        .taiwan-map {
-            width: 100%;
-            height: 100%;
-        }
-
-        .county-group {
-            cursor: pointer;
-        }
-
-        .county {
-            transition: fill 0.2s ease, filter 0.2s ease;
-            stroke: #ffffff;
-            stroke-width: 1.5;
-            stroke-linejoin: round;
-        }
-
-        .county-group:hover .county, .county-group:active .county {
-            filter: brightness(0.85);
-        }
-
-        .map-label {
-            font-size: 12px;
-            font-weight: bold;
-            fill: #333333;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            pointer-events: none; 
-            user-select: none;
-        }
-        
-        .white-label {
-            fill: #ffffff;
-        }
-
-        /* 🎮 第四關專屬：接花小遊戲容器樣式 */
         #game-container {
-            display: none;
-            position: relative;
-            width: 100%;
-            height: 320px;
-            background: linear-gradient(to bottom, #fff5f5, #ffe3e3);
-            border-radius: 16px;
-            border: 2px dashed #ff758f;
-            overflow: hidden;
-            margin-bottom: 10px;
-            touch-action: none; /* 阻止手機拖曳時產生網頁原生滾動 */
+          height: 240px;
         }
-
-        /* 遊戲上方資訊列 */
-        .game-stats {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 15px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            color: #d90429;
-            position: absolute;
-            width: 100%;
-            top: 0;
-            z-index: 15;
-        }
-
-        /* 籃子 */
-        #basket {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            width: 65px;
-            height: 45px;
-            font-size: 40px;
-            line-height: 45px;
-            text-align: center;
-            transform: translateX(-50%);
-            cursor: grab;
-            z-index: 12;
-            user-select: none;
-        }
-
-        /* 掉落的花朵 */
-        .falling-flower {
-            position: absolute;
-            font-size: 26px;
-            user-select: none;
-            z-index: 11;
-        }
-
-        /* 倒數計時大字特效 */
-        #countdown-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 4rem;
-            font-weight: bold;
-            color: #ff4d6d;
-            z-index: 20;
-            display: none;
-            border-radius: 16px;
-        }
-
-        /* 🌸 自訂網頁精美彈窗樣式 */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-box {
-            background: white;
-            width: 85%;
-            max-width: 320px;
-            padding: 25px 20px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-            transform: scale(0.8);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-align: center;
-        }
-
-        .modal-overlay.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-overlay.show .modal-box {
-            transform: scale(1);
-        }
-
-        .modal-text {
-            color: #4a4a4a;
-            font-size: 1.05rem;
-            line-height: 1.5;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .modal-btn {
-            background: linear-gradient(135deg, #ff758f, #ff4d6d);
-            color: white;
-            padding: 10px 30px;
-            font-size: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(255, 77, 109, 0.3);
-            transition: transform 0.1s ease;
-        }
-        
-        .modal-btn:active {
-            transform: scale(0.95);
-        }
-
-        .giant-yes {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 999 !important;
-            border-radius: 0 !important;
-            font-size: 2.5rem !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            animation: confettiFall 4s linear infinite;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        @keyframes confettiFall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
-        @media (max-height: 600px) {
-            .container { padding: 20px; }
-            .gif-container { height: 100px; }
-            .gif-container img { max-width: 100px; max-height: 100px; }
-            h1 { font-size: 1.1rem; margin-bottom: 10px; }
-            #map-container { height: 280px; }
-            #game-container { height: 240px; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="envelope-wrapper" id="envelopeWrapper">
+      <div class="envelope">
+        <div class="flap"></div>
+        <div class="pocket"></div>
+        <div class="wax-seal" id="waxSeal">
+          <div class="wax-text">💖</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content-stage">
+      <div class="main-card"></div>
+    </div>
 
     <div class="container" id="main-card">
-        <div class="progress-bar" id="progress-container">
-            <div class="step active"></div>
-            <div class="step"></div>
-            <div class="step"></div>
-            <div class="step"></div>
-            <div class="step"></div>
-        </div>
+      <div class="progress-bar" id="progress-container">
+        <div class="step active"></div>
+        <div class="step"></div>
+        <div class="step"></div>
+        <div class="step"></div>
+        <div class="step"></div>
+      </div>
 
-        <div class="gif-container">
-            <img id="display-gif" src="" alt="stage gif">
-        </div>
-        <h1 id="question">載入中...</h1>
-        
-        <div id="map-container">
-            <svg class="taiwan-map" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是台北/新北，這裡的九份老街景點我們下次再去好嗎？')">
-                    <path class="county" fill="#ffccd5" d="M200,40 C220,30 255,45 250,70 C240,85 210,80 200,75 C190,70 190,50 200,40 Z" />
-                    <text x="218" y="58" class="map-label">台北</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是桃園，這裡的大溪老街景點我們下次再去好嗎？')">
-                    <path class="county" fill="#ffb3c1" d="M175,60 L200,60 L200,75 L180,95 L160,85 Z" />
-                    <text x="182" y="74" class="map-label">桃園</text>
-                </g>
-                <g class="county-group" onclick="triggerHsinchu()">
-                    <path class="county" fill="#ff4d6d" d="M150,85 L180,95 L170,120 L140,110 Z" />
-                    <text x="160" y="103" class="map-label white-label">新竹</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是苗栗，這裡的三義勝興車站景點我們下次再去好嗎？')">
-                    <path class="county" fill="#90e0ef" d="M125,110 L140,110 L170,120 L155,145 L120,135 Z" />
-                    <text x="142" y="126" class="map-label">苗栗</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是台中，這裡的高美濕地景點我們下次再去好嗎？')">
-                    <path class="county" fill="#00b4d8" d="M100,135 L120,135 L155,145 L145,180 L90,165 Z" />
-                    <text x="122" y="153" class="map-label white-label">台中</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是彰化，這裡的鹿港老街景點我們下次再去好嗎？')">
-                    <path class="county" fill="#caf0f8" d="M85,165 L95,165 L115,195 L80,195 Z" />
-                    <text x="94" y="181" class="map-label">彰化</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是南投，這裡的日月潭景點我們下次再去好嗎？')">
-                    <path class="county" fill="#98f5e1" d="M115,195 L145,180 L185,145 L190,210 L145,235 Z" />
-                    <text x="155" y="195" class="map-label">南投</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是雲林，這裡的古坑綠色隧道景點我們下次再去好嗎？')">
-                    <path class="county" fill="#b7e4c7" d="M70,195 L115,195 L105,225 L60,215 Z" />
-                    <text x="88" y="211" class="map-label">雲林</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是嘉義，這裡的阿里山森林公園景點我們下次再去好嗎？')">
-                    <path class="county" fill="#74c69d" d="M55,215 L105,225 L135,245 L95,260 L50,240 Z" />
-                    <text x="85" y="238" class="map-label">嘉義</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是台南，這裡的安平古堡景點我們下次再去好嗎？')">
-                    <path class="county" fill="#52b788" d="M45,240 L95,260 L90,295 L40,280 Z" />
-                    <text x="68" y="268" class="map-label white-label">台南</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是高雄，這裡的駁二藝術特區景點我們下次再去好嗎？')">
-                    <path class="county" fill="#2d6a4f" d="M40,280 L90,295 L120,270 L135,320 L75,345 Z" />
-                    <text x="85" y="315" class="map-label white-label">高雄</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是屏東，這裡的墾丁大街景點我們下次再去好嗎？')">
-                    <path class="county" fill="#d8f3dc" d="M75,345 L135,320 L115,385 L85,385 Z" />
-                    <text x="100" y="355" class="map-label">屏東</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是宜蘭，這裡的礁溪溫泉景點我們下次再去好嗎？')">
-                    <path class="county" fill="#fde2e4" d="M200,75 C215,80 240,85 230,130 L185,145 L190,105 Z" />
-                    <text x="208" y="105" class="map-label">宜蘭</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是花蓮，這裡的太魯閣景點我們下次再去好嗎？')">
-                    <path class="county" fill="#ffb703" d="M185,145 L230,130 L190,260 L150,240 Z" />
-                    <text x="190" y="185" class="map-label">花蓮</text>
-                </g>
-                <g class="county-group" onclick="showCustomModal('不是喔，這裡是台東，這裡的三仙台景點我們下次再去好嗎？')">
-                    <path class="county" fill="#fb8500" d="M150,240 L190,260 L150,335 L120,310 Z" />
-                    <text x="155" y="285" class="map-label white-label">台東</text>
-                </g>
-            </svg>
-        </div>
+      <div class="gif-container">
+        <img id="display-gif" src="" alt="stage gif" />
+      </div>
+      <h1 id="question">載入中...</h1>
 
-        <div id="game-container">
-            <div class="game-stats">
-                <div id="game-timer">剩餘時間: 10s</div>
-                <div id="game-score">接到花朵: 0</div>
-            </div>
-            <div id="countdown-overlay">3</div>
-            <div id="basket">🧺</div>
+      <div id="map-container">
+        <svg
+          class="taiwan-map"
+          viewBox="0 20 300 380"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是台北/新北，這裡的九份老街景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#ffccd5"
+              d="M200,40 C220,30 255,45 250,70 C240,85 210,80 200,75 C190,70 190,50 200,40 Z"
+            />
+            <text x="218" y="58" class="map-label">台北</text>
+          </g>
+          <g class="county-group" onclick="showCustomModal('not 桃園...')">
+            <path
+              class="county"
+              fill="#ffb3c1"
+              d="M175,60 L200,60 L200,75 L180,95 L160,85 Z"
+            />
+            <text x="182" y="74" class="map-label">桃園</text>
+          </g>
+          <g class="county-group" onclick="triggerHsinchu()">
+            <path
+              class="county"
+              fill="#ff4d6d"
+              d="M150,85 L180,95 L170,120 L140,110 Z"
+            />
+            <text x="160" y="103" class="map-label white-label">新竹</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                'not 苗栗，這裡的三義勝興車站景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#90e0ef"
+              d="M125,110 L140,110 L170,120 L155,145 L120,135 Z"
+            />
+            <text x="142" y="126" class="map-label">苗栗</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是台中，這裡的高美濕地景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#00b4d8"
+              d="M100,135 L120,135 L155,145 L145,180 L90,165 Z"
+            />
+            <text x="122" y="153" class="map-label white-label">台中</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是彰化，這裡的鹿港老街景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#caf0f8"
+              d="M85,165 L95,165 L115,195 L80,195 Z"
+            />
+            <text x="94" y="181" class="map-label">彰化</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是南投，這裡的日月潭景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#98f5e1"
+              d="M115,195 L145,180 L185,145 L190,210 L145,235 Z"
+            />
+            <text x="155" y="195" class="map-label">南投</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是雲林，這裡的古坑綠色隧道景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#b7e4c7"
+              d="M70,195 L115,195 L105,225 L60,215 Z"
+            />
+            <text x="88" y="211" class="map-label">雲林</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是嘉義，這裡的阿里山森林公園景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#74c69d"
+              d="M55,215 L105,225 L135,245 L95,260 L50,240 Z"
+            />
+            <text x="85" y="238" class="map-label">嘉義</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是台南，這裡的安平古堡景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#52b788"
+              d="M45,240 L95,260 L90,295 L40,280 Z"
+            />
+            <text x="68" y="268" class="map-label white-label">台南</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是高雄，這裡的駁二藝術特區景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#2d6a4f"
+              d="M40,280 L90,295 L120,270 L135,320 L75,345 Z"
+            />
+            <text x="85" y="315" class="map-label white-label">高雄</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是屏東，這裡的墾丁大街景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#d8f3dc"
+              d="M75,345 L135,320 L115,385 L85,385 Z"
+            />
+            <text x="100" y="355" class="map-label">屏東</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是宜蘭，這裡的礁溪溫泉景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#fde2e4"
+              d="M200,75 C215,80 240,85 230,130 L185,145 L190,105 Z"
+            />
+            <text x="208" y="105" class="map-label">宜蘭</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                'not 花蓮...'
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#ffb703"
+              d="M185,145 L230,130 L190,260 L150,240 Z"
+            />
+            <text x="190" y="185" class="map-label">花蓮</text>
+          </g>
+          <g
+            class="county-group"
+            onclick="
+              showCustomModal(
+                '不是喔，這裡是台東，這裡的三仙台景點我們下次再去好嗎？',
+              )
+            "
+          >
+            <path
+              class="county"
+              fill="#fb8500"
+              d="M150,240 L190,260 L150,335 L120,310 Z"
+            />
+            <text x="155" y="285" class="map-label white-label">台東</text>
+          </g>
+        </svg>
+      </div>
+
+      <div id="game-container">
+        <div class="game-stats">
+          <div id="game-timer">剩餘時間: 10s</div>
+          <div id="game-score">接到花朵: 0</div>
         </div>
-        
-        <div class="btn-group" id="btn-container">
-            <button id="yes-btn" onclick="handleYes()">Yes</button>
-            <button id="no-btn" ontouchstart="handleNo(event)" onmouseover="handleNo(event)" onclick="handleNo(event)">No</button>
-        </div>
+        <div id="countdown-overlay">3</div>
+        <div id="basket">🧺</div>
+      </div>
+
+      <div class="btn-group" id="btn-container">
+        <button id="yes-btn" onclick="handleYes()">Yes</button>
+        <button
+          id="no-btn"
+          ontouchstart="handleNo(event)"
+          onmouseover="handleNo(event)"
+          onclick="handleNo(event)"
+        >
+          No
+        </button>
+      </div>
     </div>
 
     <div class="modal-overlay" id="custom-modal">
-        <div class="modal-box">
-            <div class="modal-text" id="modal-content">提示文字</div>
-            <button class="modal-btn" id="modal-action-btn" onclick="closeCustomModal()">好哦</button>
-        </div>
+      <div class="modal-box">
+        <div class="modal-text" id="modal-content">提示文字</div>
+        <button class="modal-btn" onclick="closeCustomModal()">確定</button>
+      </div>
     </div>
 
+    <div class="modal-overlay" id="stage3-modal">
+      <div class="modal-box">
+        <div class="modal-text" id="stage3-modal-content">
+          哇！被妳猜到了！🎉<br>沒錯，我們就是要去新竹度假慶生囉！❤️
+        </div>
+        <button class="modal-btn" id="stage3-modal-btn" onclick="closeStage3Modal()">
+          但是有這麼簡單嗎~<br>準備好迎接挑戰了嗎！🚀
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="stage4-modal">
+      <div class="modal-box">
+        <div class="modal-text" id="stage4-modal-content">
+          🎉 挑戰時間到！ 🎉<br><br>
+          小寶貝太可惜了！<br>
+          雖然沒有接到100朵花花，但沒關係～<br>
+          只要親妳的小寶貝一下就可以通關囉！🥰
+        </div>
+        <button class="modal-btn" id="stage4-modal-btn">
+          (っ˘з(˘⌣˘ ) 💋❤️💋❤️💋
+        </button>
+      </div>
+    </div>
+
+
+    <style>
+      .heart-explosion-container {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        pointer-events: none; z-index: 99999; overflow: hidden;
+      }
+      .floating-heart {
+        position: absolute; font-size: 26px; user-select: none;
+        animation: heartFlyAndFade 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      @keyframes heartFlyAndFade {
+        0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 1; }
+        100% {
+          transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty) - 120px)) scale(var(--scale)) rotate(var(--rot));
+          opacity: 0;
+        }
+      }
+      .page-transition-overlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background-color: #ffffff; opacity: 0; pointer-events: none;
+        z-index: 100000; transition: opacity 0.8s ease-in-out;
+      }
+      .page-transition-overlay.active { opacity: 1; pointer-events: auto; }
+    </style>
+
+    <div class="page-transition-overlay" id="transitionOverlay"></div>
+
+
     <script>
-        const noBtn = document.getElementById('no-btn');
-        const yesBtn = document.getElementById('yes-btn');
-        const card = document.getElementById('main-card');
-        const gif = document.getElementById('display-gif');
-        const question = document.getElementById('question');
-        const steps = document.querySelectorAll('.step');
-        
-        // 模組容器
-        const mapContainer = document.getElementById('map-container');
-        const gameContainer = document.getElementById('game-container');
-        const btnContainer = document.getElementById('btn-container');
-        
-        // 彈窗與小遊戲元素
-        const customModal = document.getElementById('custom-modal');
-        const modalContent = document.getElementById('modal-content');
-        const modalActionBtn = document.getElementById('modal-action-btn');
-        const basket = document.getElementById('basket');
-        const gameTimerText = document.getElementById('game-timer');
-        const gameScoreText = document.getElementById('game-score');
-        const countdownOverlay = document.getElementById('countdown-overlay');
+      const noBtn = document.getElementById("no-btn");
+      const yesBtn = document.getElementById("yes-btn");
+      const card = document.getElementById("main-card");
+      const gif = document.getElementById("display-gif");
+      const question = document.getElementById("question");
+      const steps = document.querySelectorAll(".step");
 
-        let currentStage = 0; 
-        let noClickCount = 0; 
-        let isHsinchuClicked = false; 
-        
-        // 遊戲狀態變數
-        let gameScore = 0;
-        let gameTimeLeft = 10;
-        let gameInterval = null;
-        let spawnInterval = null;
-        let flowerElements = [];
-        let isGameStageIntro = false;
-        let isGameStageEnd = false;
+      // 模組容器
+      const mapContainer = document.getElementById("map-container");
+      const gameContainer = document.getElementById("game-container");
+      const btnContainer = document.getElementById("btn-container");
 
-        const stages = [
-            {
-                question: "親愛的小寶貝，你知道6/24號是什麼重要的日子嗎？ 🤔",
-                yesText: "是我的生日！", 
-                noText: "我不知道耶~ 🥺",     
-                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Bnd21kZ3R1YXJ1M3R0Nms3bXg2dG94ZXFmZXN4bmp3ZndpZ3FubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/c4v48NmrF78R2/giphy.gif"
-            },
-            {
-                question: "沒錯！<br>就是我家最可愛小寶貝誕生的日子！<br>生日就是應該要吃大餐！<br>那小寶貝知道今天晚餐我們要去吃什麼嗎？",
-                yesText: "答案是Snail 蝸牛義大利餐廳",
-                noText: "不知道耶~",
-                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3JpMnRhZ29vNXAwZDJmaDJ6eHBoZm93N3o3cTlyMDhhYzdtMW0wbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/Y4z9olDcYtT20/giphy.gif"
-            },
-            {
-                question: "第三關：吃飽飽之後，我們要開啟一趟神秘小旅行！<br>點擊地圖猜猜看，我們要去台灣的哪裡過生日呢？ 🗺️✈️",
-                yesText: "",
-                noText: "",
-                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3g5Mms0ZXhieGl3YXhicHFyOHV2eGJ0M3p4Mm9ma3p3ZDJ1ZWZ3dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/9f2hmeIUtZ9kvJJ1v7/giphy.gif"
-            },
-            {
-                question: "第四關：去新竹前放鬆一下！聽說這裡有場浪漫的花瓣雨...🌸<br>動動手指操控籃子，接住落下來的花朵吧！",
-                yesText: "",
-                noText: "",
-                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExG3E4bTNsODVpMGpib3loNDJ5ZnM1cTJ1MWo3eW1xZGdtMmd4cnV3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/K6wiNs597WhA4/giphy.gif"
-            },
-            {
-                question: "最後一關：最後確認！所以你願意當我的情人節北鼻了嗎？ ❤️",
-                yesText: "好啦，答應你！🥰",
-                noText: "下輩子吧",
-                normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmszbWw3MDZsMWszazh6cjBhZmlmdmhrZTFjY2g0MTd4ZHp0dzN1eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/v9G3NGByE9x16/giphy.gif"
-            }
-        ];
+      // 彈窗元素 (已拆分)
+      const customModal = document.getElementById("custom-modal");
+      const modalContent = document.getElementById("modal-content");
+      
+      const stage3Modal = document.getElementById("stage3-modal");
+      const stage4Modal = document.getElementById("stage4-modal");
+      const stage4ModalBtn = document.getElementById("stage4-modal-btn");
+      const transitionOverlay = document.getElementById("transitionOverlay");
 
-        const firstStageNoTexts = ["寶貝再想想 💔", "是不是快想起來了！😭", "沒錯！大聲說出來！🙏"];
-        const secondStageNoTexts = ["是日式料理嗎？", "答錯了~ 寶貝最近應該吃很多日式料理了吧", "那是牛排嗎？", "也不對喔~牛排改天我們再去吃", "那究竟是什麼呢！？\n登登登登登登(音效)"];
-        const generalNoTexts = ["Are you sure? 🥺", "再考慮一下嘛... 💔", "不准按這裡！😭", "真的不要？🙏", "你抓不到我～😂"];
+      const basket = document.getElementById("basket");
+      const gameTimerText = document.getElementById("game-timer");
+      const gameScoreText = document.getElementById("game-score");
+      const countdownOverlay = document.getElementById("countdown-overlay");
 
-        function initStage() {
-            noClickCount = 0;
-            
-            noBtn.style.position = 'static';
-            noBtn.style.transform = 'scale(1)';
-            noBtn.style.display = 'inline-block'; 
-            noBtn.innerText = stages[currentStage].noText;
-            
-            yesBtn.style.transform = 'scale(1)';
-            yesBtn.classList.remove('giant-yes');
+      let currentStage = 0;
+      let noClickCount = 0;
 
-            // 關卡切換邏輯
-            if (currentStage === 2) {
-                btnContainer.style.display = 'none';
-                mapContainer.style.display = 'flex';
-                gameContainer.style.display = 'none';
-            } else if (currentStage === 3) {
-                // 進入第四關：地圖和按鈕群隱藏，開啟小遊戲版面，並自動跳出玩法說明
-                btnContainer.style.display = 'none';
-                mapContainer.style.display = 'none';
-                gameContainer.style.display = 'block';
-                
-                isGameStageIntro = true;
-                showCustomModal("✨ 寶貝挑戰來啦！ ✨<br><br>天空等一下會掉落好多漂亮花瓣，在 10 秒內用手指【左右滑動拖曳】下方的籃子接住它們吧！準備好了嗎？");
-            } else {
-                btnContainer.style.display = 'flex';
-                mapContainer.style.display = 'none';
-                gameContainer.style.display = 'none';
+      // 遊戲狀態變數
+      let gameScore = 0;
+      let gameTimeLeft = 10;
+      let gameInterval = null;
+      let spawnInterval = null;
+      let flowerElements = [];
+      let isGameStageIntro = false;
 
-                if (currentStage === 0 || currentStage === 1) {
-                    yesBtn.style.display = 'none';
-                } else {
-                    yesBtn.style.display = 'inline-block';
-                    yesBtn.innerText = stages[currentStage].yesText;
-                }
-            }
+      const stages = [
+        {
+          question: "親愛的小寶貝，你知道6/24號是什麼重要的日子嗎？ 🤔",
+          yesText: "是我的生日！",
+          noText: "我不知道耶~ 🥺",
+          normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Bnd21kZ3R1YXJ1M3R0Nms3bXg2dG94ZXFmZXN4bmp3ZndpZ3FubyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/c4v48NmrF78R2/giphy.gif",
+        },
+        {
+          question: "沒錯！<br>就是我家最可愛小寶貝誕生的日子！<br>生日就是應該要吃大餐！(๑>؂<๑)<br>小寶貝知道今天晚餐我們要去吃什麼嗎？",
+          yesText: "答案是Snail 蝸牛義大利餐廳！🍝",
+          noText: "不知道耶~",
+          normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3JpMnRhZ29vNXAwZDJmaDJ6eHBoZm93N3o3cTlyMDhhYzdtMW0wbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/Y4z9olDcYtT20/giphy.gif",
+        },
+        {
+          question: "吃飽飽之後，準備開啟一趟神秘小旅行！<br>點擊地圖猜猜看，我們要去台灣的哪裡過生日呢？ 🗺️✈️",
+          yesText: "", noText: "",
+          normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3g5Mms0ZXhieGl3YXhicHFyOHV2eGJ0M3p4Mm9ma3p3ZDJ1ZWZ3dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/9f2hmeIUtZ9kvJJ1v7/giphy.gif",
+        },
+        {
+          question: "第四關：去新竹前要來個小挑戰！寶貝要接到...100朵花才行喔！🌸<br>動動手指操控籃子，接住落下來的花朵吧！",
+          yesText: "", noText: "",
+          normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExG3E4bTNsODVpMGpib3loNDJ5ZnM1cTJ1MWo3eW1xZGdtMmd4cnV3MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/K6wiNs597WhA4/giphy.gif",
+        },
+        {
+          question: "最後一關：最後確認！所以你願意當我的情人節北鼻了嗎？ ❤️",
+          yesText: "好啦，答應你！🥰",
+          noText: "下輩子吧",
+          normalGif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmszbWw3MDZsMWszazh6cjBhZmlmdmhrZTFjY2g0MTd4ZHp0dzN1eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/v9G3NGByE9x16/giphy.gif",
+        },
+      ];
 
-            question.innerHTML = stages[currentStage].question;
-            gif.src = stages[currentStage].normalGif;
+      const firstStageNoTexts = ["寶貝再想想 💔", "是不是快想起來了！😭", "沒錯！大聲說出來！🙏"];
+      const secondStageNoTexts = ["是日式料理嗎🍣？", "答錯了~ 寶貝最近應該吃很多日式料理了吧🍜", "那是牛排嗎🥩？", "也不對喔~牛排改天我們再去吃🍖", "那究竟是什麼呢！？\n登登登登登登(๑•̀ㅂ•́)و✧ 🍴"];
+      const generalNoTexts = ["Are you sure? 🥺", "再考慮一下嘛... 💔", "不准按這裡！😭", "真的不要？🙏", "你抓不到我～😂"];
 
-            steps.forEach((step, idx) => {
-                if (idx <= currentStage) step.classList.add('active');
-                else step.classList.remove('active');
-            });
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+      function initStage() {
+        noClickCount = 0;
+        noBtn.style.position = "static";
+        noBtn.style.transform = "scale(1)";
+        noBtn.style.display = "inline-block";
+        noBtn.innerText = stages[currentStage].noText;
+
+        yesBtn.style.transform = "scale(1)";
+        yesBtn.classList.remove("giant-yes");
+
+        if (currentStage === 2) {
+          btnContainer.style.display = "none";
+          mapContainer.style.display = "flex";
+          gameContainer.style.display = "none";
+        } else if (currentStage === 3) {
+          btnContainer.style.display = "none";
+          mapContainer.style.display = "none";
+          gameContainer.style.display = "block";
+
+          // 第四關開始前，跳出說明提示 (沿用通用 Modal 即可)
+          isGameStageIntro = true;
+          showCustomModal("✨ 寶貝挑戰來啦！ ✨<br><br>天空等一下會掉落好多漂亮花瓣，在 10 秒內用手指【左右滑動拖曳】下方的籃子接住它們吧！準備好了嗎？");
+        } else {
+          btnContainer.style.display = "flex";
+          mapContainer.style.display = "none";
+          gameContainer.style.display = "none";
+
+          if (currentStage === 0 || currentStage === 1) {
+            yesBtn.style.display = "none";
+          } else {
+            yesBtn.style.display = "inline-block";
+            yesBtn.innerText = stages[currentStage].yesText;
+          }
         }
 
-        function showCustomModal(text) {
-            modalContent.innerHTML = text;
-            customModal.classList.add('show');
+        question.innerHTML = stages[currentStage].question;
+        gif.src = stages[currentStage].normalGif;
+
+        steps.forEach((step, idx) => {
+          if (idx <= currentStage) step.classList.add("active");
+          else step.classList.remove("active");
+        });
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // 錯誤提示用舊 Modal 控制
+      function showCustomModal(text) {
+        modalContent.innerHTML = text;
+        customModal.classList.add("show");
+      }
+      function closeCustomModal() {
+        customModal.classList.remove("show");
+        if (isGameStageIntro) {
+          isGameStageIntro = false;
+          startCountdown();
         }
+      }
 
-        function closeCustomModal() {
-            customModal.classList.remove('show');
-            
-            if (isHsinchuClicked) {
-                isHsinchuClicked = false; 
-                handleYes();
-                return;
-            }
-            
-            // 第四關前導說明按下確認後，開始3秒倒數
-            if (isGameStageIntro) {
-                isGameStageIntro = false;
-                startCountdown();
-                return;
-            }
+      // 第三關：猜對新竹
+      function triggerHsinchu() {
+        stage3Modal.classList.add("show");
+      }
+      function closeStage3Modal() {
+        stage3Modal.classList.remove("show");
+        handleYes(); // 前進到第四關
+      }
 
-            // 第四關遊戲結束按下確認後，推進到最終關
-            if (isGameStageEnd) {
-                isGameStageEnd = false;
-                handleYes();
-                return;
-            }
-        }
+      /* 🎮 第四關遊戲控制核心邏輯 */
+      function startCountdown() {
+        countdownOverlay.style.display = "flex";
+        let count = 3;
+        countdownOverlay.innerText = count;
 
-        function triggerHsinchu() {
-            isHsinchuClicked = true;
-            showCustomModal("哇！被妳猜到了！🎉<br>沒錯，我們就是要去新竹度假慶生囉！❤️");
-        }
-
-        /* 🎮 第四關遊戲控制核心邏輯 */
-        function startCountdown() {
-            countdownOverlay.style.display = 'flex';
-            let count = 3;
+        let countTimer = setInterval(() => {
+          count--;
+          if (count > 0) {
             countdownOverlay.innerText = count;
-            
-            let countTimer = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownOverlay.innerText = count;
-                } else if (count === 0) {
-                    countdownOverlay.innerText = "Go! 🌸";
-                } else {
-                    clearInterval(countTimer);
-                    countdownOverlay.style.display = 'none';
-                    startGameLoop(); // 倒數完畢，啟動遊戲
-                }
-            }, 1000);
-        }
+          } else if (count === 0) {
+            countdownOverlay.innerText = "Go! 🌸";
+          } else {
+            clearInterval(countTimer);
+            countdownOverlay.style.display = "none";
+            startGameLoop();
+          }
+        }, 1000);
+      }
 
-        function startGameLoop() {
-            gameScore = 0;
-            gameTimeLeft = 10;
-            gameScoreText.innerText = `接到花朵: ${gameScore}`;
-            gameTimerText.innerText = `剩餘時間: ${gameTimeLeft}s`;
-            
-            // 籃子初始化位置置中
-            basket.style.left = '50%';
-            setupBasketControl();
+      function startGameLoop() {
+        gameScore = 0;
+        gameTimeLeft = 10;
+        gameScoreText.innerText = `接到花朵: ${gameScore}`;
+        gameTimerText.innerText = `剩餘時間: ${gameTimeLeft}s`;
 
-            // 10秒倒數計時器
-            gameInterval = setInterval(() => {
-                gameTimeLeft--;
-                gameTimerText.innerText = `剩餘時間: ${gameTimeLeft}s`;
-                
-                if (gameTimeLeft <= 0) {
-                    endGame();
-                }
-            }, 1000);
+        basket.style.left = "50%";
+        setupBasketControl();
 
-            // 每 400 毫秒生成一朵隨機落花
-            spawnInterval = setInterval(spawnFlower, 400);
+        gameInterval = setInterval(() => {
+          gameTimeLeft--;
+          gameTimerText.innerText = `剩餘時間: ${gameTimeLeft}s`;
+          if (gameTimeLeft <= 0) endGame();
+        }, 1000);
 
-            // 動態更新花朵物理掉落與碰撞檢測
-            requestAnimationFrame(updateFlowers);
-        }
+        spawnInterval = setInterval(spawnFlower, 400);
+        requestAnimationFrame(updateFlowers);
+      }
 
-        // 手機與網頁共用：控制籃子跟隨手指/滑鼠移動
-        function setupBasketControl() {
-            const moveHandler = (e) => {
-                const rect = gameContainer.getBoundingClientRect();
-                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                let relativeX = clientX - rect.left;
-                
-                // 邊界防禦，不讓籃子超出邊界
-                if (relativeX < 32) relativeX = 32;
-                if (relativeX > rect.width - 32) relativeX = rect.width - 32;
-                
-                basket.style.left = `${relativeX}px`;
-            };
+      function setupBasketControl() {
+        const moveHandler = (e) => {
+          const rect = gameContainer.getBoundingClientRect();
+          let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          let relativeX = clientX - rect.left;
 
-            // 綁定觸控與滑鼠事件
-            gameContainer.addEventListener('mousemove', moveHandler);
-            gameContainer.addEventListener('touchmove', moveHandler, { passive: true });
-        }
+          if (relativeX < 32) relativeX = 32;
+          if (relativeX > rect.width - 32) relativeX = rect.width - 32;
+          basket.style.left = `${relativeX}px`;
+        };
+        gameContainer.addEventListener("mousemove", moveHandler);
+        gameContainer.addEventListener("touchmove", moveHandler, { passive: true });
+      }
 
-        function spawnFlower() {
-            const flowers = ['🌸', '🌹', '🌷', '✨', '🌺'];
-            const flower = document.createElement('div');
-            flower.classList.add('falling-flower');
-            flower.innerText = flowers[Math.floor(Math.random() * flowers.length)];
-            
-            const containerWidth = gameContainer.offsetWidth;
-            const randomX = Math.random() * (containerWidth - 30);
-            
-            flower.style.left = `${randomX}px`;
-            flower.style.top = `-30px`;
-            
-            gameContainer.appendChild(flower);
-            
-            // 紀錄花朵物件狀態 (速度微幅隨機更自然)
-            flowerElements.push({
-                element: flower,
-                y: -30,
-                speed: Math.random() * 2 + 3 
-            });
-        }
+      function spawnFlower() {
+        const flowers = ["🌸", "🌹", "🌷", "✨", "🌺", "🌼"];
+        const flower = document.createElement("div");
+        flower.classList.add("falling-flower");
+        flower.innerText = flowers[Math.floor(Math.random() * flowers.length)];
 
-        function updateFlowers() {
-            if (gameTimeLeft <= 0) return; // 遊戲結束停止更新
+        const containerWidth = gameContainer.offsetWidth;
+        const randomX = Math.random() * (containerWidth - 30);
 
-            const containerHeight = gameContainer.offsetHeight;
-            const basketRect = basket.getBoundingClientRect();
-            const containerRect = gameContainer.getBoundingClientRect();
+        flower.style.left = `${randomX}px`;
+        flower.style.top = `-30px`;
+        gameContainer.appendChild(flower);
 
-            // 計算籃子相對於容器的頂部與左右邊界距離
-            const basketTop = basketRect.top - containerRect.top;
-            const basketLeft = basketRect.left - containerRect.left;
-            const basketRight = basketLeft + basketRect.width;
+        flowerElements.push({
+          element: flower,
+          y: -30,
+          speed: Math.random() * 2 + 3,
+        });
+      }
 
-            for (let i = flowerElements.length - 1; i >= 0; i--) {
-                let f = flowerElements[i];
-                f.y += f.speed;
-                f.element.style.top = `${f.y}px`;
+      function updateFlowers() {
+        if (gameTimeLeft <= 0) return;
 
-                // 碰撞檢測：當花朵掉落到籃子高度時
-                if (f.y >= basketTop - 15 && f.y <= basketTop + 25) {
-                    const flowerLeft = parseFloat(f.element.style.left);
-                    // 檢查花朵水平位置是否在籃子範圍內
-                    if (flowerLeft + 15 >= basketLeft && flowerLeft <= basketRight - 5) {
-                        gameScore++;
-                        gameScoreText.innerText = `接到花朵: ${gameScore}`;
-                        f.element.remove();
-                        flowerElements.splice(i, 1);
-                        continue;
-                    }
-                }
+        const containerHeight = gameContainer.offsetHeight;
+        const basketRect = basket.getBoundingClientRect();
+        const containerRect = gameContainer.getBoundingClientRect();
 
-                // 超出邊界移除
-                if (f.y > containerHeight) {
-                    f.element.remove();
-                    flowerElements.splice(i, 1);
-                }
+        const basketTop = basketRect.top - containerRect.top;
+        const basketLeft = basketRect.left - containerRect.left;
+        const basketRight = basketLeft + basketRect.width;
+
+        for (let i = flowerElements.length - 1; i >= 0; i--) {
+          let f = flowerElements[i];
+          f.y += f.speed;
+          f.element.style.top = `${f.y}px`;
+
+          if (f.y >= basketTop - 15 && f.y <= basketTop + 25) {
+            const flowerLeft = parseFloat(f.element.style.left);
+            if (flowerLeft + 15 >= basketLeft && flowerLeft <= basketRight - 5) {
+              gameScore++;
+              gameScoreText.innerText = `接到花朵: ${gameScore}`;
+              f.element.remove();
+              flowerElements.splice(i, 1);
+              continue;
             }
+          }
 
-            requestAnimationFrame(updateFlowers);
+          if (f.y > containerHeight) {
+            f.element.remove();
+            flowerElements.splice(i, 1);
+          }
+        }
+        requestAnimationFrame(updateFlowers);
+      }
+
+      // 第四關：小遊戲結束，彈出獨立的 Stage 4 Modal
+      function endGame() {
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        flowerElements.forEach((f) => f.element.remove());
+        flowerElements = [];
+
+        // 更新專用 Modal 裡顯示的分數數據
+        document.getElementById("stage4-modal-content").innerHTML = 
+          `🎉 挑戰時間到！ 🎉<br><br>小寶貝太厲害了！<br>一共接到了 <span style="color:#ff4d6d; font-size:1.4rem; font-weight:bold;">${gameScore}</span> 朵花花！<br>雖然沒有接到100朵，但是只要親妳的小寶貝一下就可以通關囉！🥰`;
+        
+        stage4Modal.classList.add("show");
+      }
+
+      // 監聽第四關 Modal 的「(っ˘з(˘⌣˘ ) 💋❤️💋❤️💋」按鈕事件
+      stage4ModalBtn.addEventListener('click', (e) => {
+        const rect = stage4ModalBtn.getBoundingClientRect();
+        const originX = rect.left + rect.width / 2;
+        const originY = rect.top + rect.height / 2;
+
+        // 建立愛心容器
+        const container = document.createElement('div');
+        container.className = 'heart-explosion-container';
+        document.body.appendChild(container);
+
+        const heartColors = ['#ff4d6d', '#ff758f', '#ff8fa3', '#ffb3c1', '#ff0a54'];
+        const heartCount = 45;
+
+        // 爆發愛心
+        for (let i = 0; i < heartCount; i++) {
+          const heart = document.createElement('div');
+          heart.className = 'floating-heart';
+          heart.innerHTML = '❤️';
+          heart.style.left = `${originX}px`;
+          heart.style.top = `${originY}px`;
+
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 120 + Math.random() * 200;
+          const tx = Math.cos(angle) * distance;
+          const ty = Math.sin(angle) * distance;
+          const scale = 0.6 + Math.random() * 1.2;
+          const rot = (Math.random() - 0.5) * 360;
+
+          heart.style.color = heartColors[Math.floor(Math.random() * heartColors.length)];
+          heart.style.animationDelay = `${Math.random() * 0.2}s`;
+          heart.style.setProperty('--tx', `${tx}px`);
+          heart.style.setProperty('--ty', `${ty}px`);
+          heart.style.setProperty('--scale', scale);
+          heart.style.setProperty('--rot', `${rot}deg`);
+
+          container.appendChild(heart);
         }
 
-        function endGame() {
-            clearInterval(gameInterval);
-            clearInterval(spawnInterval);
-            
-            // 清空畫面上殘留的所有花朵
-            flowerElements.forEach(f => f.element.remove());
-            flowerElements = [];
+        // 動畫時序：白屏淡入 -> 關閉彈窗切換關卡 -> 白屏淡出
+        setTimeout(() => {
+          transitionOverlay.classList.add('active');
+        }, 1200);
 
-            isGameStageEnd = true;
-            showCustomModal(`🎉 挑戰時間到！ 🎉<br><br>小寶貝太棒了！一共接到了 <span style="color:#d90429; font-size:1.3rem; font-weight:bold;">${gameScore}</span> 朵浪漫花瓣！<br>看來妳的手速與默契都滿分喔！🥰`);
-        }
+        setTimeout(() => {
+          container.remove();
+          stage4Modal.classList.remove("show"); // 關閉第四關彈窗
+          handleYes();                          // 前進第五頁
 
-        /* 處理點擊「不同意」的防禦機制動畫 */
-        function handleNo(event) {
-            if (event) event.preventDefault();
-            
-            if (currentStage === 0) {
-                if (noClickCount === firstStageNoTexts.length) {
-                    noBtn.style.display = 'none';                   
-                    yesBtn.innerText = stages[currentStage].yesText; 
-                    yesBtn.style.display = 'inline-block';           
-                    return;
-                }
-                if (noClickCount < firstStageNoTexts.length) {
-                    noBtn.innerText = firstStageNoTexts[noClickCount];
-                    noClickCount++;
-                }
-                return; 
-            }
-            if (currentStage === 1) {
-                if (noClickCount === secondStageNoTexts.length) {
-                    noBtn.style.display = 'none';                   
-                    yesBtn.innerText = stages[currentStage].yesText; 
-                    yesBtn.style.display = 'inline-block';           
-                    return;
-                }
-                if (noClickCount < secondStageNoTexts.length) {
-                    noBtn.innerText = secondStageNoTexts[noClickCount];
-                    noClickCount++;
-                }
-                return; 
-            }
+          setTimeout(() => {
+            transitionOverlay.classList.remove('active');
+          }, 300);
+        }, 2000);
+      });
 
+      function handleNo(event) {
+        if (event) event.preventDefault();
+
+        if (currentStage === 0) {
+          if (noClickCount === firstStageNoTexts.length) {
+            noBtn.style.display = "none";
+            yesBtn.innerText = stages[currentStage].yesText;
+            yesBtn.style.display = "inline-block";
+            return;
+          }
+          if (noClickCount < firstStageNoTexts.length) {
+            noBtn.innerText = firstStageNoTexts[noClickCount];
             noClickCount++;
-
-            const textIdx = Math.min(noClickCount - 1, generalNoTexts.length - 1);
-            noBtn.innerText = generalNoTexts[textIdx];
-
-            const yesScale = 1 + (noClickCount * 0.3);
-            yesBtn.style.transform = `scale(${yesScale})`;
-
-            const noScale = Math.max(0.5, 1 - (noClickCount * 0.1));
-            noBtn.style.transform = `scale(${noScale})`;
-
-            if (noClickCount >= 3 && noClickCount < 8) {
-                teleportNoButton();
-            }
-
-            if (noClickCount >= 8) {
-                noBtn.style.position = 'static';
-                yesBtn.innerText = "就說了只能選 " + stages[currentStage].yesText + "! ❤️";
-                yesBtn.classList.add('giant-yes');
-            }
+          }
+          return;
+        }
+        if (currentStage === 1) {
+          if (noClickCount === secondStageNoTexts.length) {
+            noBtn.style.display = "none";
+            yesBtn.innerText = stages[currentStage].yesText;
+            yesBtn.style.display = "inline-block";
+            return;
+          }
+          if (noClickCount < secondStageNoTexts.length) {
+            noBtn.innerText = secondStageNoTexts[noClickCount];
+            noClickCount++;
+          }
+          return;
         }
 
-        function teleportNoButton() {
-            const padding = 30;
-            const maxX = window.innerWidth - noBtn.offsetWidth - padding;
-            const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+        noClickCount++;
+        const textIdx = Math.min(noClickCount - 1, generalNoTexts.length - 1);
+        noBtn.innerText = generalNoTexts[textIdx];
 
-            const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
-            const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+        const yesScale = 1 + noClickCount * 0.3;
+        yesBtn.style.transform = `scale(${yesScale})`;
 
-            noBtn.style.position = 'fixed';
-            noBtn.style.left = randomX + 'px';
-            noBtn.style.top = randomY + 'px';
+        const noScale = Math.max(0.5, 1 - noClickCount * 0.1);
+        noBtn.style.transform = `scale(${noScale})`;
+
+        if (noClickCount >= 3 && noClickCount < 8) teleportNoButton();
+
+        if (noClickCount >= 8) {
+          noBtn.style.position = "static";
+          yesBtn.innerText = "就說了只能選 " + stages[currentStage].yesText + "! ❤️";
+          yesBtn.classList.add("giant-yes");
         }
+      }
 
-        function handleYes() {
-            currentStage++;
-            if (currentStage < stages.length) {
-                initStage();
-            } else {
-                celebrate();
-            }
+      function teleportNoButton() {
+        const padding = 30;
+        const maxX = window.innerWidth - noBtn.offsetWidth - padding;
+        const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+
+        const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+        const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+        noBtn.style.position = "fixed";
+        noBtn.style.left = randomX + "px";
+        noBtn.style.top = randomY + "px";
+      }
+
+      function handleYes() {
+        currentStage++;
+        if (currentStage < stages.length) {
+          initStage();
+        } else {
+          celebrate();
         }
+      }
 
-        function celebrate() {
-            document.getElementById('progress-container').style.display = 'none';
-            if(mapContainer) mapContainer.style.display = 'none';
-            if(gameContainer) gameContainer.style.display = 'none';
-            btnContainer.style.display = 'none';
+      function celebrate() {
+        document.getElementById("progress-container").style.display = "none";
+        if (mapContainer) mapContainer.style.display = "none";
+        if (gameContainer) gameContainer.style.display = "none";
+        btnContainer.style.display = "none";
 
-            gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbW9pM3R5Y2Nndm9xMTZ2bW93cXc5amY1YzhwM200b3VnZnd0N3FjNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/26FLdmIp6wJr91JAI/giphy.gif";
-            question.innerHTML = "任務通關！🎉❤️<br>我成功約到妳了！這天就留給我囉！";
+        gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbW9pM3R5Y2Nndm9xMTZ2bW93cXc5amY1YzhwM200b3VnZnd0N3FjNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/26FLdmIp6wJr91JAI/giphy.gif";
+        question.innerHTML = "任務通關！🎉❤️<br>我成功約到妳了！這天就留給我囉！";
 
-            setInterval(createConfetti, 150);
-        }
+        setInterval(createConfetti, 150);
+      }
 
-        function createConfetti() {
-            const colors = ['#ff4d6d', '#ff758f', '#ffb3c1', '#38b000', '#ffb703', '#2196f3'];
-            const confetti = document.createElement('div');
-            confetti.classList.add('confetti');
-            
-            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            
-            if (Math.random() > 0.5) confetti.style.borderRadius = '50%';
+      function createConfetti() {
+        const colors = ["#ff4d6d", "#ff758f", "#ffb3c1", "#38b000", "#ffb703", "#2196f3"];
+        const confetti = document.createElement("div");
+        confetti.classList.add("confetti");
 
-            document.body.appendChild(confetti);
-            setTimeout(() => confetti.remove(), 4000);
-        }
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.left = Math.random() * 100 + "vw";
+        confetti.style.animationDuration = Math.random() * 2 + 2 + "s";
 
-        window.onload = initStage;
+        if (Math.random() > 0.5) confetti.style.borderRadius = "50%";
+
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 4000);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const waxSeal = document.getElementById("waxSeal");
+        const envelope = document.querySelector(".envelope");
+        const envelopeWrapper = document.getElementById("envelopeWrapper");
+
+        waxSeal.addEventListener("click", () => {
+          envelope.classList.add("open");
+          setTimeout(() => { envelopeWrapper.classList.add("fade-out"); }, 1200);
+          setTimeout(() => { envelopeWrapper.style.display = "none"; }, 2000);
+        });
+      });
+
+      window.onload = initStage;
     </script>
-</body>
+  </body>
 </html>
